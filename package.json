@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Dynamic image gallery for ClickByAzmi",
   "main": "index.html",
+  "type": "module",
   "scripts": {
     "build": "echo 'No build step required'"
   },
