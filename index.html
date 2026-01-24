@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jishaan Azmi | Photography | clickbyazmi</title>
+    <link rel="icon" type="image/x-icon" href="clickbyazmi-favicon.png">
+    <meta name="description" content="View the creative photography and digital artwork by Jishaan Azmi, the founder of ClickByAzmi.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@900&family=Source+Code+Pro&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        .lightbox-download {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        #gallery img {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <h1>Jishaan Azmi - <span id="clickbyazmi" style="cursor: pointer;">@clickbyazmi</span></h1>
+    <center><p>Explore the latest work from ClickByAzmi, the creative photography brand by Jishaan Azmi.</p></center>
+</div>
+
+<div id="adminModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000;">
+    <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; max-width: 300px; width: 90%;">
+        <h3 style="margin-top: 0; color: #333;">Admin Access</h3>
+        <input type="password" id="adminPassword" placeholder="Enter password" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; margin: 10px 0; box-sizing: border-box;">
+        <div>
+            <button onclick="checkAdmin()" style="background: #333; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin: 5px;">Login</button>
+            <button onclick="hideAdminModal()" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin: 5px;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="uploadSection" style="display: none; background: #f8f9fa; padding: 20px; margin: 20px auto; border-radius: 8px; text-align: center; max-width: 500px; border: 1px solid #dee2e6;">
+    <h3 style="color: #333; margin-bottom: 20px;">Upload New Images</h3>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="images" accept="image/*" multiple required style="margin: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <div id="fileCount" style="color: #666; font-size: 14px; margin: 5px 0;"></div>
+        <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px;">Upload Images</button>
+        <button type="button" onclick="logout()" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px;">Logout</button>
+    </form>
+    <div id="status"></div>
+</div>
+
+<div class="lightbox" id="lightbox">
+    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+    <img id="lightboxImg" src="" alt="">
+    <a id="downloadBtn" class="lightbox-download" href="" download="">Download</a>
+</div>
+
+<div id="gallery">
+    <!-- Images will be loaded dynamically -->
+</div>
+
+<script>
+    const uploadForm = document.getElementById('uploadForm');
+    const statusDiv = document.getElementById('status');
+    const gallery = document.getElementById('gallery');
+
+    // Check if admin is already logged in
+    if (localStorage.getItem('adminAccess') === 'true') {
+        document.getElementById('uploadSection').style.display = 'block';
+    }
+
+    // Load gallery on page load
+    loadGallery();
+
+    // Add click event to @clickbyazmi
+    document.getElementById('clickbyazmi').addEventListener('click', function() {
+        document.getElementById('adminModal').style.display = 'flex';
+    });
+
+    function hideAdminModal() {
+        document.getElementById('adminModal').style.display = 'none';
+        document.getElementById('adminPassword').value = '';
+    }
+
+    function checkAdmin() {
+        const password = document.getElementById('adminPassword').value;
+        if (password === 'clickbyazmi2024') {
+            localStorage.setItem('adminAccess', 'true');
+            document.getElementById('uploadSection').style.display = 'block';
+            hideAdminModal();
+        } else {
+            alert('Incorrect password');
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('adminAccess');
+        document.getElementById('uploadSection').style.display = 'none';
+        statusDiv.innerHTML = '';
+    }
+
+    // Handle form submission
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(uploadForm);
+        const fileInput = uploadForm.querySelector('input[type="file"]');
+        const fileCount = fileInput.files.length;
+        
+        if (fileCount === 0) {
+            statusDiv.innerHTML = '<div style="color: #dc3545; padding: 10px;">Please select at least one image</div>';
+            return;
+        }
+        
+        statusDiv.innerHTML = `<div style="color: #007bff; padding: 10px;">Uploading ${fileCount} image(s)...</div>`;
+        
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                statusDiv.innerHTML = `<div style="color: #28a745; padding: 10px;">${result.count} image(s) uploaded successfully!</div>`;
+                uploadForm.reset();
+                document.getElementById('fileCount').textContent = '';
+                loadGallery();
+                setTimeout(() => statusDiv.innerHTML = '', 3000);
+            } else {
+                statusDiv.innerHTML = `<div style="color: #dc3545; padding: 10px;">Error: ${result.error}</div>`;
+            }
+        } catch (error) {
+            statusDiv.innerHTML = `<div style="color: #dc3545; padding: 10px;">Upload failed: ${error.message}</div>`;
+        }
+    });
+
+    // Show file count when files are selected
+    uploadForm.querySelector('input[type="file"]').addEventListener('change', function(e) {
+        const count = e.target.files.length;
+        const fileCountDiv = document.getElementById('fileCount');
+        if (count > 0) {
+            fileCountDiv.textContent = `${count} file(s) selected`;
+        } else {
+            fileCountDiv.textContent = '';
+        }
+    });
+
+    // Close modal on outside click
+    document.getElementById('adminModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideAdminModal();
+        }
+    });
+
+    // Enter key support for password
+    document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkAdmin();
+        }
+    });
+
+    // Load gallery images
+    async function loadGallery() {
+        try {
+            const response = await fetch('/api/images');
+            const data = await response.json();
+            
+            gallery.innerHTML = '';
+            
+            data.images.forEach(image => {
+                const img = document.createElement('img');
+                img.src = image.path;
+                img.alt = `Jishaan Azmi - clickbyazmi - ${image.name}`;
+                img.loading = 'lazy';
+                img.onclick = () => openLightbox(image.path, image.name);
+                gallery.appendChild(img);
+            });
+        } catch (error) {
+            console.error('Failed to load gallery:', error);
+        }
+    }
+
+    function openLightbox(imageSrc, imageName) {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        lightboxImg.src = imageSrc;
+        lightboxImg.alt = imageName;
+        downloadBtn.href = imageSrc;
+        downloadBtn.download = imageName;
+        lightbox.style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').style.display = 'none';
+    }
+
+    // Close lightbox on background click
+    document.getElementById('lightbox').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLightbox();
+        }
+    });
+
+    // Close lightbox with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeLightbox();
+        }
+    });
+</script>
+
+</body>
+</html>

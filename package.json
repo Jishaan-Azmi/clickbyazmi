@@ -1,0 +1,13 @@
+{
+  "name": "clickbyazmi-gallery",
+  "version": "1.0.0",
+  "description": "Dynamic image gallery for ClickByAzmi",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": "18.x"
+  }
+}
