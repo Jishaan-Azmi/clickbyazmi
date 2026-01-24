@@ -11,6 +11,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@900&family=Source+Code+Pro&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
+        .admin-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .admin-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 300px;
+            width: 90%;
+        }
+        .admin-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        .admin-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .upload-section {
+            background: #f8f9fa;
+            padding: 30px;
+            margin: 30px auto;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 600px;
+            display: none;
+        }
+        .file-input {
+            margin: 10px;
+            padding: 8px;
+        }
+        .upload-btn {
+            background: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 15px 10px;
+        }
+        .status {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
         .lightbox {
             position: fixed;
             top: 0;
@@ -60,24 +132,26 @@
     <center><p>Explore the latest work from ClickByAzmi, the creative photography brand by Jishaan Azmi.</p></center>
 </div>
 
-<div id="adminModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000;">
-    <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; max-width: 300px; width: 90%;">
+<div class="admin-modal" id="adminModal">
+    <div class="admin-form">
         <h3 style="margin-top: 0; color: #333;">Admin Access</h3>
-        <input type="password" id="adminPassword" placeholder="Enter password" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; margin: 10px 0; box-sizing: border-box;">
+        <input type="password" id="adminPassword" class="admin-input" placeholder="Enter password">
         <div>
-            <button onclick="checkAdmin()" style="background: #333; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin: 5px;">Login</button>
-            <button onclick="hideAdminModal()" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin: 5px;">Cancel</button>
+            <button class="admin-btn" onclick="checkAdmin()">Login</button>
+            <button class="admin-btn" onclick="hideAdminModal()">Cancel</button>
         </div>
     </div>
 </div>
 
-<div id="uploadSection" style="display: none; background: #f8f9fa; padding: 20px; margin: 20px auto; border-radius: 8px; text-align: center; max-width: 500px; border: 1px solid #dee2e6;">
-    <h3 style="color: #333; margin-bottom: 20px;">Upload New Images</h3>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="images" accept="image/*" multiple required style="margin: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-        <div id="fileCount" style="color: #666; font-size: 14px; margin: 5px 0;"></div>
-        <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px;">Upload Images</button>
-        <button type="button" onclick="logout()" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px;">Logout</button>
+<div class="upload-section" id="uploadSection">
+    <h2>Upload New Images</h2>
+    <form id="uploadForm">
+        <input type="file" id="imageFiles" accept="image/*" multiple class="file-input" required>
+        <div id="fileCount" style="color: #666; margin: 10px 0;"></div>
+        <div>
+            <button type="submit" class="upload-btn">🚀 Upload Images</button>
+            <button type="button" class="admin-btn" onclick="logout()" style="background: #dc3545;">Logout</button>
+        </div>
     </form>
     <div id="status"></div>
 </div>
@@ -89,8 +163,45 @@
 </div>
 
 <div id="gallery">
-    <!-- Images will be loaded dynamically -->
+    <!-- Images will be loaded from Firebase -->
 </div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+    import { getFirestore, collection, addDoc, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Firebase config
+    const firebaseConfig = {
+        apiKey: "AIzaSyBDFI5NDlgNbI2_4CsqGKVbDx-Oz8PZn5I",
+        authDomain: "clickbyazmi-c31c7.firebaseapp.com",
+        projectId: "clickbyazmi-c31c7",
+        storageBucket: "clickbyazmi-c31c7.firebasestorage.app",
+        messagingSenderId: "653739089798",
+        appId: "1:653739089798:web:2cec2f2836f4cc74095607",
+        measurementId: "G-KS6QJKS9D0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+    const db = getFirestore(app);
+
+    // Global variables
+    window.storage = storage;
+    window.db = db;
+    window.ref = ref;
+    window.uploadBytes = uploadBytes;
+    window.getDownloadURL = getDownloadURL;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.orderBy = orderBy;
+    window.query = query;
+
+    // Load gallery on page load
+    loadGallery();
+</script>
 
 <script>
     const uploadForm = document.getElementById('uploadForm');
@@ -101,9 +212,6 @@
     if (localStorage.getItem('adminAccess') === 'true') {
         document.getElementById('uploadSection').style.display = 'block';
     }
-
-    // Load gallery on page load
-    loadGallery();
 
     // Add click event to @clickbyazmi
     document.getElementById('clickbyazmi').addEventListener('click', function() {
@@ -136,45 +244,49 @@
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const formData = new FormData(uploadForm);
-        const fileInput = uploadForm.querySelector('input[type="file"]');
-        const fileCount = fileInput.files.length;
-        
-        if (fileCount === 0) {
-            statusDiv.innerHTML = '<div style="color: #dc3545; padding: 10px;">Please select at least one image</div>';
+        const files = document.getElementById('imageFiles').files;
+        if (files.length === 0) {
+            statusDiv.innerHTML = '<div class="status error">Please select at least one image</div>';
             return;
         }
-        
-        statusDiv.innerHTML = `<div style="color: #007bff; padding: 10px;">Uploading ${fileCount} image(s)...</div>`;
-        
+
+        statusDiv.innerHTML = `<div class="status">🔄 Uploading ${files.length} image(s)...</div>`;
+
         try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
+            let uploadedCount = 0;
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            for (let file of files) {
+                // Upload to Firebase Storage
+                const storageRef = window.ref(window.storage, `images/${Date.now()}-${file.name}`);
+                const snapshot = await window.uploadBytes(storageRef, file);
+                const downloadURL = await window.getDownloadURL(snapshot.ref);
+
+                // Save metadata to Firestore
+                await window.addDoc(window.collection(window.db, 'images'), {
+                    name: file.name,
+                    url: downloadURL,
+                    size: file.size,
+                    uploadDate: new Date()
+                });
+
+                uploadedCount++;
+                statusDiv.innerHTML = `<div class="status">🔄 Uploaded ${uploadedCount}/${files.length} images...</div>`;
             }
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                statusDiv.innerHTML = `<div style="color: #28a745; padding: 10px;">${result.count} image(s) uploaded successfully!</div>`;
-                uploadForm.reset();
-                document.getElementById('fileCount').textContent = '';
-                loadGallery();
-                setTimeout(() => statusDiv.innerHTML = '', 3000);
-            } else {
-                statusDiv.innerHTML = `<div style="color: #dc3545; padding: 10px;">Error: ${result.error}</div>`;
-            }
+
+            statusDiv.innerHTML = `<div class="status success">✅ ${uploadedCount} image(s) uploaded successfully!</div>`;
+            uploadForm.reset();
+            document.getElementById('fileCount').textContent = '';
+            loadGallery();
+            setTimeout(() => statusDiv.innerHTML = '', 5000);
+
         } catch (error) {
-            statusDiv.innerHTML = `<div style="color: #dc3545; padding: 10px;">Upload failed: ${error.message}</div>`;
+            console.error('Upload error:', error);
+            statusDiv.innerHTML = `<div class="status error">❌ Upload failed: ${error.message}</div>`;
         }
     });
 
     // Show file count when files are selected
-    uploadForm.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    document.getElementById('imageFiles').addEventListener('change', function(e) {
         const count = e.target.files.length;
         const fileCountDiv = document.getElementById('fileCount');
         if (count > 0) {
@@ -184,42 +296,26 @@
         }
     });
 
-    // Close modal on outside click
-    document.getElementById('adminModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            hideAdminModal();
-        }
-    });
-
-    // Enter key support for password
-    document.getElementById('adminPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            checkAdmin();
-        }
-    });
-
-    // Load gallery images
+    // Load gallery images from Firebase
     async function loadGallery() {
-        // Fallback to static images since API isn't working
-        const staticImages = [
-            { path: '/img/jishaan-azmi-clickbyazmi-98.jpg', name: 'jishaan-azmi-clickbyazmi-98.jpg' },
-            { path: '/img/jishaan-azmi-clickbyazmi-97.jpg', name: 'jishaan-azmi-clickbyazmi-97.jpg' },
-            { path: '/img/jishaan-azmi-clickbyazmi-96.jpg', name: 'jishaan-azmi-clickbyazmi-96.jpg' },
-            { path: '/img/jishaan-azmi-clickbyazmi-95.jpg', name: 'jishaan-azmi-clickbyazmi-95.jpg' },
-            { path: '/img/jishaan-azmi-clickbyazmi-94.jpg', name: 'jishaan-azmi-clickbyazmi-94.jpg' }
-            // Add more images as needed
-        ];
-        
-        gallery.innerHTML = '';
-        
-        staticImages.forEach(image => {
-            const img = document.createElement('img');
-            img.src = image.path;
-            img.alt = `Jishaan Azmi - clickbyazmi - ${image.name}`;
-            img.loading = 'lazy';
-            img.onclick = () => openLightbox(image.path, image.name);
-            gallery.appendChild(img);
-        });
+        try {
+            const q = window.query(window.collection(window.db, 'images'), window.orderBy('uploadDate', 'desc'));
+            const querySnapshot = await window.getDocs(q);
+            
+            gallery.innerHTML = '';
+            
+            querySnapshot.forEach((doc) => {
+                const imageData = doc.data();
+                const img = document.createElement('img');
+                img.src = imageData.url;
+                img.alt = `Jishaan Azmi - clickbyazmi - ${imageData.name}`;
+                img.loading = 'lazy';
+                img.onclick = () => openLightbox(imageData.url, imageData.name);
+                gallery.appendChild(img);
+            });
+        } catch (error) {
+            console.error('Failed to load gallery:', error);
+        }
     }
 
     function openLightbox(imageSrc, imageName) {
@@ -249,6 +345,20 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeLightbox();
+        }
+    });
+
+    // Close modal on outside click
+    document.getElementById('adminModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideAdminModal();
+        }
+    });
+
+    // Enter key support for password
+    document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkAdmin();
         }
     });
 </script>
