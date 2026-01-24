@@ -200,23 +200,26 @@
 
     // Load gallery images
     async function loadGallery() {
-        try {
-            const response = await fetch('/api/images');
-            const data = await response.json();
-            
-            gallery.innerHTML = '';
-            
-            data.images.forEach(image => {
-                const img = document.createElement('img');
-                img.src = image.path;
-                img.alt = `Jishaan Azmi - clickbyazmi - ${image.name}`;
-                img.loading = 'lazy';
-                img.onclick = () => openLightbox(image.path, image.name);
-                gallery.appendChild(img);
-            });
-        } catch (error) {
-            console.error('Failed to load gallery:', error);
-        }
+        // Fallback to static images since API isn't working
+        const staticImages = [
+            { path: '/img/jishaan-azmi-clickbyazmi-98.jpg', name: 'jishaan-azmi-clickbyazmi-98.jpg' },
+            { path: '/img/jishaan-azmi-clickbyazmi-97.jpg', name: 'jishaan-azmi-clickbyazmi-97.jpg' },
+            { path: '/img/jishaan-azmi-clickbyazmi-96.jpg', name: 'jishaan-azmi-clickbyazmi-96.jpg' },
+            { path: '/img/jishaan-azmi-clickbyazmi-95.jpg', name: 'jishaan-azmi-clickbyazmi-95.jpg' },
+            { path: '/img/jishaan-azmi-clickbyazmi-94.jpg', name: 'jishaan-azmi-clickbyazmi-94.jpg' }
+            // Add more images as needed
+        ];
+        
+        gallery.innerHTML = '';
+        
+        staticImages.forEach(image => {
+            const img = document.createElement('img');
+            img.src = image.path;
+            img.alt = `Jishaan Azmi - clickbyazmi - ${image.name}`;
+            img.loading = 'lazy';
+            img.onclick = () => openLightbox(image.path, image.name);
+            gallery.appendChild(img);
+        });
     }
 
     function openLightbox(imageSrc, imageName) {
